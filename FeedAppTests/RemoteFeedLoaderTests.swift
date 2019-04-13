@@ -11,13 +11,15 @@ import FeedApp
 
 class RemoteFeedLoader {
     private let client: HTTPClient
+    private let url: URL
 
-    init(client: HTTPClient) {
+    init(client: HTTPClient, url: URL) {
         self.client = client
+        self.url = url
     }
 
     func load() {
-        client.get(from: URL(string: "https://any-url.com")!)
+        client.get(from: url)
     }
 }
 
@@ -37,15 +39,19 @@ class RemoteFeedLoaderTests: XCTestCase {
     
     func test_init_doesNotLoad() {
         let client = HTTPClientSpy()
-        _ = RemoteFeedLoader(client: client)
+        let url = URL(string: "https://given-url.com")!
+        _ = RemoteFeedLoader(client: client, url: url)
         
         XCTAssertNil(client.requestedURL)
     }
     
     func test_load_requestDataFromURL() {
+        let url = URL(string: "https://given-url.com")!
         let client = HTTPClientSpy()
-        let sut = RemoteFeedLoader(client: client)
+        let sut = RemoteFeedLoader(client: client, url: url)
+        
         sut.load()
-        XCTAssertNotNil(client.requestedURL)
+        
+        XCTAssertEqual(client.requestedURL, url)
     }
 }
