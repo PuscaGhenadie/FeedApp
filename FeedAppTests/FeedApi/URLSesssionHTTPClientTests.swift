@@ -17,10 +17,13 @@ class URLSessionHTTPClient {
     }
     
     struct UnexpectedValuesRepresntation: Error {}
+    
     func get(from url: URL, completion: @escaping (HTTPClientResult) -> Void) {
-        session.dataTask(with: url) { _, _, error in
+        session.dataTask(with: url) { data, response, error in
             if let error = error {
                 completion(.error(error))
+            } else if let data = data, data.count > 0, let response = response as? HTTPURLResponse {
+                completion(.success(data, response))
             } else {
                 completion(.error(UnexpectedValuesRepresntation()))
             }
@@ -73,6 +76,28 @@ class URLSesssionHTTPClientTests: XCTestCase {
         XCTAssertNotNil(resulError(forData: anyData(), response: nonHTTPURLResponse(), error: nil))
     }
 
+    func test_getFromURL_succedsOnHTTPURLResponseWithData() {
+        
+        let data = anyData()
+        let response = anyHTTPURLResponse()
+        let sut = makeSUT()
+        
+        URLProtocolStub.stub(data: data, response: response, error: nil)
+        let exp = expectation(description: "Wait for completion")
+        sut.get(from: anyURL()){ result in
+            switch result {
+            case let .success(receivedData, receivedResponse):
+                XCTAssertEqual(receivedData, data)
+                XCTAssertEqual(receivedResponse.url, response.url)
+                XCTAssertEqual(receivedResponse.statusCode, response.statusCode)
+            default:
+                XCTFail("Expected sucess, got \(result)")
+            }
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 1.0)
+    }
+
     // MARK: - Helpers
     
     private func makeSUT(file: StaticString = #file, line: UInt = #line) -> URLSessionHTTPClient {
@@ -85,8 +110,8 @@ class URLSesssionHTTPClientTests: XCTestCase {
         URLProtocolStub.stub(data: data, response: response, error: error)
         let sut = makeSUT(file: file, line: line)
         let exp = expectation(description: "Wait for completion")
-        var capturedError: Error?
         
+        var capturedError: Error?
         sut.get(from: anyURL()) { result in
             switch result {
             case let .error(error):
@@ -119,11 +144,11 @@ class URLSesssionHTTPClientTests: XCTestCase {
                            textEncodingName: nil)
     }
     
-    private func anyHTTPURLResponse() {
+    private func anyHTTPURLResponse() -> HTTPURLResponse {
         return HTTPURLResponse(url: anyURL(),
                                statusCode: 1,
                                httpVersion: nil,
-                               headerFields: nil)
+                               headerFields: nil)!
         
     }
 
@@ -146,11 +171,11 @@ class URLSesssionHTTPClientTests: XCTestCase {
             requestObserver = observer
         }
         override class func canInit(with request: URLRequest) -> Bool {
+            requestObserver?(request)
             return true
         }
         
         override class func canonicalRequest(for request: URLRequest) -> URLRequest {
-            requestObserver?(request)
             return request
         }
 
