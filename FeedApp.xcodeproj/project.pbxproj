@@ -16,6 +16,7 @@
 		6CD39F7A2263194300A6860D /* HTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CD39F792263194300A6860D /* HTTPClient.swift */; };
 		6CD39F7C2263195C00A6860D /* FeedItemMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CD39F7B2263195C00A6860D /* FeedItemMapper.swift */; };
 		6CD39F7F226355C800A6860D /* URLSesssionHTTPClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CD39F7E226355C800A6860D /* URLSesssionHTTPClientTests.swift */; };
+		6CD39F82226385BF00A6860D /* MemoryLeakTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CD39F81226385BF00A6860D /* MemoryLeakTrack.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,6 +42,7 @@
 		6CD39F792263194300A6860D /* HTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPClient.swift; sourceTree = "<group>"; };
 		6CD39F7B2263195C00A6860D /* FeedItemMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedItemMapper.swift; sourceTree = "<group>"; };
 		6CD39F7E226355C800A6860D /* URLSesssionHTTPClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLSesssionHTTPClientTests.swift; sourceTree = "<group>"; };
+		6CD39F81226385BF00A6860D /* MemoryLeakTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryLeakTrack.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +96,7 @@
 		6CA99B0622625A14005CA8E0 /* FeedAppTests */ = {
 			isa = PBXGroup;
 			children = (
+				6CD39F80226385B100A6860D /* Helpers */,
 				6CD39F7D22631D1D00A6860D /* FeedApi */,
 				6CA99B0922625A14005CA8E0 /* Info.plist */,
 			);
@@ -126,6 +129,14 @@
 				6CD39F7E226355C800A6860D /* URLSesssionHTTPClientTests.swift */,
 			);
 			path = FeedApi;
+			sourceTree = "<group>";
+		};
+		6CD39F80226385B100A6860D /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				6CD39F81226385BF00A6860D /* MemoryLeakTrack.swift */,
+			);
+			path = Helpers;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -251,6 +262,7 @@
 			files = (
 				6CA99B0822625A14005CA8E0 /* RemoteFeedLoaderTests.swift in Sources */,
 				6CD39F7F226355C800A6860D /* URLSesssionHTTPClientTests.swift in Sources */,
+				6CD39F82226385BF00A6860D /* MemoryLeakTrack.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
