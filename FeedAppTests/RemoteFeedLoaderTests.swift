@@ -66,6 +66,22 @@ class RemoteFeedLoaderTests: XCTestCase {
         }
     }
 
+    func test_load_deliversItemsOn200HTTPResponseValidJSON() {
+        let (sut, client) = makeSUT()
+        
+        let (item1, item1JSON) = makeItem(id: UUID(),
+                                          imageURL: URL(string: "https://a-url.com")!)
+
+        let (item2, item2JSON) = makeItem(id: UUID(),
+                                          description: "a desc",
+                                          location: "a loc",
+                                          imageURL: URL(string: "https://another-url.com")!)
+    
+        
+        expect(sut, toCompleteWithResult: .success([item1, item2])) {
+            client.complete(withStatusCode: 200, data: makeItemsJSON([item1JSON, item2JSON]))
+        }
+    }
     // MARK: Helpers
     private func makeSUT(url: URL = URL(string: "https://given-url.com")!) -> (sut: RemoteFeedLoader, client: HTTPClientSpy) {
         let client = HTTPClientSpy()
@@ -73,6 +89,27 @@ class RemoteFeedLoaderTests: XCTestCase {
         return (sut, client)
     }
     
+    private func makeItem(id: UUID, description: String? = nil, location: String? = nil, imageURL: URL) -> (item: FeedItem, json: [String: Any]) {
+        let item = FeedItem(id: id,
+                             description: description,
+                             location: location,
+                             imageURL: imageURL)
+        let itemJSON = [
+            "id": item.id.uuidString,
+            "description": item.description,
+            "location": item.location,
+            "image": item.imageURL.absoluteString
+            ].reduce(into: [String: Any](), { (acc, e) in
+                if let value = e.value { acc[e.key] = value }
+            })
+        
+        return (item, itemJSON)
+    }
+
+    private func makeItemsJSON(_ items: [[String: Any]]) -> Data {
+        return try! JSONSerialization.data(withJSONObject: ["items": items])
+    }
+
     private func expect(_ sut: RemoteFeedLoader, toCompleteWithResult result: RemoteFeedLoader.Result, file: StaticString = #file, line: UInt = #line, action: () -> Void) {
         
         var capturedResults = [RemoteFeedLoader.Result]()
