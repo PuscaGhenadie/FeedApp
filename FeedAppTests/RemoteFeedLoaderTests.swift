@@ -43,7 +43,8 @@ class RemoteFeedLoaderTests: XCTestCase {
         samples.enumerated().forEach { index, code in
             expect(sut,
                    toCompleteWithResult: .error(.invalidData), action: {
-                    client.complete(withStatusCode: code, idx: index)
+                    let json = makeItemsJSON([])
+                    client.complete(withStatusCode: code, data: json, idx: index)
             })
         }
     }
@@ -82,6 +83,7 @@ class RemoteFeedLoaderTests: XCTestCase {
             client.complete(withStatusCode: 200, data: makeItemsJSON([item1JSON, item2JSON]))
         }
     }
+    
     // MARK: Helpers
     private func makeSUT(url: URL = URL(string: "https://given-url.com")!) -> (sut: RemoteFeedLoader, client: HTTPClientSpy) {
         let client = HTTPClientSpy()
@@ -136,7 +138,7 @@ class RemoteFeedLoaderTests: XCTestCase {
         }
         
         func complete(withStatusCode statusCode: Int,
-                      data: Data = Data(),
+                      data: Data,
                       idx: Int = 0) {
             let response = HTTPURLResponse(url: requestedURLs[idx],
                                            statusCode: statusCode,
