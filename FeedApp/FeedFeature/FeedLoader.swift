@@ -13,6 +13,7 @@ public enum LoadFeedResult{
     case error(Error)
 }
 
+/// The feed loader protocol responsable for loading the feed data
 public protocol FeedLoader {
     func load(completion: @escaping (LoadFeedResult) -> Void)
 }
