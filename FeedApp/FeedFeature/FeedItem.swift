@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// The core domain model
 public struct FeedItem: Equatable {
     public let id: UUID
     public let description: String?
