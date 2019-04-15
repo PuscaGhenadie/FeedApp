@@ -9,38 +9,6 @@
 import XCTest
 import FeedApp
 
-class LocalFeedLoader {
-    let store: FeedStore
-    let dateProvider: () -> Date
-    
-    init(store: FeedStore, dateProvider: @escaping () -> Date) {
-        self.store = store
-        self.dateProvider = dateProvider
-    }
-    
-    func save(items: [FeedItem], completion: @escaping (Error?) -> Void) {
-        store.deleteCachedFeed { [weak self] deletionError in
-            guard let self = self else { return }
-            if deletionError == nil {
-                self.store.cache(items: items, timeStamp: self.dateProvider()) { [weak self] insertionError in
-                    guard self != nil else { return }
-                    completion(insertionError)
-                }
-            } else {
-                completion(deletionError)
-            }
-        }
-    }
-}
-
-protocol FeedStore {
-    typealias DeletionCompletion = (Error?) -> Void
-    typealias InsertionCompletion = (Error?) -> Void
-    
-    func deleteCachedFeed(completion: @escaping DeletionCompletion)
-    func cache(items: [FeedItem], timeStamp: Date, completion: @escaping InsertionCompletion)
-}
-
 class CacheFeedUseCase: XCTestCase {
     
     func test_init_doesNotDeleteCacheOnCreation() {
