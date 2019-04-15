@@ -66,6 +66,10 @@ class FeedStore {
     func completeInsertionWith(error err: Error, at idx: Int = 0) {
         insertionCompletions[idx](err)
     }
+    
+    func completeInsertionWithSuccess(idx: Int = 0) {
+        insertionCompletions[idx](nil)
+    }
 }
 
 class CacheFeedUseCase: XCTestCase {
@@ -144,6 +148,24 @@ class CacheFeedUseCase: XCTestCase {
         XCTAssertEqual(capturedError as NSError?, insertionError)
     }
     
+    func test_save_succedesOnSuccessfullCacheInsertion() {
+        let timestamp = Date()
+        let items = [anyFeedItem(), anyFeedItem()]
+        let (sut, store) = makeSUT(currentDate: { timestamp })
+        
+        let exp = expectation(description: "Wait for completion")
+        var capturedError: Error?
+        sut.save(items: items) { err in
+            capturedError = err
+            exp.fulfill()
+        }
+        store.completeDeleteWithSuccess()
+        store.completeInsertionWithSuccess()
+        
+        wait(for: [exp], timeout: 1.0)
+        XCTAssertNil(capturedError)
+    }
+
     // MARK: - Helpers
     private func makeSUT(currentDate: @escaping () -> Date = Date.init, file: StaticString = #file, line: UInt = #line) -> (sut: LocalFeedLoader, store: FeedStore) {
         let store = FeedStore()
