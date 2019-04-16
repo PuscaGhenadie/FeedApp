@@ -13,7 +13,7 @@ import Foundation
 /// - success: The loading was successfull, returns with Feed items
 /// - error: The loading did fail, returns with an error
 public enum LoadFeedResult{
-    case success([FeedItem])
+    case success([FeedImage])
     case error(Error)
 }
 
