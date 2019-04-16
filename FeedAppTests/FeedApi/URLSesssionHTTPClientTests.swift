@@ -127,14 +127,6 @@ class URLSesssionHTTPClientTests: XCTestCase {
         return capturedResult
     }
     
-    private func anyURL() -> URL {
-        return URL(string: "https://a-url.com")!
-    }
-    
-    private func anyError() -> NSError {
-        return NSError(domain: "error", code: 1)
-    }
-    
     private func anyData() -> Data {
         return Data(bytes: "any data".utf8)
     }

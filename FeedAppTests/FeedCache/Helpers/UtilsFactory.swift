@@ -8,19 +8,11 @@
 
 import FeedApp
 
-func anyError() -> NSError {
-    return NSError(domain: "error", code: 1)
-}
-
 func anyFeedItem() -> FeedImage {
     return FeedImage(id: UUID(),
                      description: "any desc",
                      location: "any loc",
                      url: anyURL())
-}
-
-func anyURL() -> URL {
-    return URL(string: "https://a-url.com")!
 }
 
 func anyItems() -> (models: [FeedImage], localModels: [LocalFeedImage]) {
