@@ -28,31 +28,45 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
         let (sut, store) = makeSUT()
         let error = anyError()
         
-        let exp = expectation(description: "Wait for completion")
-        var capturedError: Error?
-        sut.load { error in
-            capturedError = error
-            exp.fulfill()
-        }
-        
-        store.completeRetrieveWithError(error: error)
-        
-        wait(for: [exp], timeout: 1.0)
-        XCTAssertEqual(capturedError as NSError?, error)
+        expect(sut, toCompleteWith: .error(error), when: {
+            store.completeRetrieveWithError(error: error)
+        })
     }
     
+    func test_load_deliversNoImageOnEmptyCache() {
+        let (sut, store) = makeSUT()
+
+        expect(sut, toCompleteWith: .success([]), when: {
+            store.complteRetrieveWithEmptyCache()
+        })
+    }
     
     // MARK: - Helpers
-
-    private func anyError() -> NSError {
-        return NSError(domain: "error", code: 1)
-    }
-
     private func makeSUT(currentDate: @escaping () -> Date = Date.init, file: StaticString = #file, line: UInt = #line) -> (sut: LocalFeedLoader, store: FeedStoreSpy) {
         let store = FeedStoreSpy()
         let sut = LocalFeedLoader(store: store, dateProvider: currentDate)
         trackForMemoryLeaks(store, file: file, line: line)
         trackForMemoryLeaks(sut, file: file, line: line)
         return (sut, store)
+    }
+    
+    private func expect(_ sut: LocalFeedLoader, toCompleteWith expectedResult: LocalFeedLoader.LoadResult, when action: () -> Void, file: StaticString = #file, line: UInt = #line) {
+     
+        sut.load { result in
+            switch (result, expectedResult) {
+            case let (.success(receivedImages), .success(expectedImages)):
+                XCTAssertEqual(receivedImages, expectedImages, file: file, line: line)
+            case let (.error(receivedError as NSError), .error(expectedError as NSError)):
+                XCTAssertEqual(receivedError, expectedError, file: file, line: line)
+            default:
+                XCTFail("Expected \(expectedResult), got \(result)", file: file, line: line)
+            }
+        }
+        
+        action()
+    }
+
+    private func anyError() -> NSError {
+        return NSError(domain: "error", code: 1)
     }
 }
