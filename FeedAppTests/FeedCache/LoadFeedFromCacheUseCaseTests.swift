@@ -41,6 +41,18 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
         })
     }
     
+    func test_load_deliversCachedImagesOnLessThenSevenDaysOldCache() {
+        let fixedCurrentDate = Date()
+        let lessThanSevenDaysOldTimestamp = fixedCurrentDate.adding(days: -7).adding(seconds: 1)
+        
+        let (sut, store) = makeSUT(currentDate: { lessThanSevenDaysOldTimestamp })
+        let feed = anyItems()
+        
+        expect(sut, toCompleteWith: .success(feed.models), when: {
+            store.completesRetrieval(with: feed.localModels, timestamp: lessThanSevenDaysOldTimestamp)
+        })
+    }
+    
     // MARK: - Helpers
     private func makeSUT(currentDate: @escaping () -> Date = Date.init, file: StaticString = #file, line: UInt = #line) -> (sut: LocalFeedLoader, store: FeedStoreSpy) {
         let store = FeedStoreSpy()
@@ -52,6 +64,7 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
     
     private func expect(_ sut: LocalFeedLoader, toCompleteWith expectedResult: LocalFeedLoader.LoadResult, when action: () -> Void, file: StaticString = #file, line: UInt = #line) {
      
+        let exp = expectation(description: "Wait for completion")
         sut.load { result in
             switch (result, expectedResult) {
             case let (.success(receivedImages), .success(expectedImages)):
@@ -61,12 +74,49 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
             default:
                 XCTFail("Expected \(expectedResult), got \(result)", file: file, line: line)
             }
+            
+            exp.fulfill()
         }
         
         action()
+        wait(for: [exp], timeout: 1.0)
     }
 
     private func anyError() -> NSError {
         return NSError(domain: "error", code: 1)
+    }
+    
+    private func anyFeedItem() -> FeedImage {
+        return FeedImage(id: UUID(),
+                         description: "any desc",
+                         location: "any loc",
+                         url: anyURL())
+    }
+
+    private func anyURL() -> URL {
+        return URL(string: "https://a-url.com")!
+    }
+    
+    private func anyItems() -> (models: [FeedImage], localModels: [LocalFeedImage]) {
+        let items = [anyFeedItem(), anyFeedItem()]
+        let localItems = items.map { LocalFeedImage(id: $0.id,
+                                                    description: $0.description,
+                                                    location: $0.location,
+                                                    url: $0.url)}
+        return (items, localItems)
+    }
+}
+
+private extension Date {
+    func adding(days: Int) -> Date {
+        return Calendar(identifier: .gregorian).date(byAdding: .day,
+                                                     value: days,
+                                                     to: self)!
+    }
+    
+    func adding(seconds: Int) -> Date {
+        return Calendar(identifier: .gregorian).date(byAdding: .second,
+                                                     value: seconds,
+                                                     to: self)!
     }
 }
