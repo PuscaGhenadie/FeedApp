@@ -86,7 +86,7 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
         XCTAssertEqual(store.commands, [.retrieveItems])
     }
     
-    func test_load_shouldNotDeleteCacheOnEmptyCache() {
+    func test_load_hasNoSideEffectsOnEmptyCache() {
         let (sut, store) = makeSUT()
         
         sut.load { _ in }
@@ -95,7 +95,7 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
         XCTAssertEqual(store.commands, [.retrieveItems])
     }
     
-    func test_load_shouldNotDeleteCacheOnLessThanSevenDaysOldCache() {
+    func test_load_hasNoSideEffectsOnLessThanSevenDaysOldCache() {
         let fixedCurrentDate = Date()
         let lessThanSevenDaysOldTimestamp = fixedCurrentDate.adding(days: -7).adding(seconds: 1)
         
@@ -173,43 +173,5 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
         
         action()
         wait(for: [exp], timeout: 1.0)
-    }
-
-    private func anyError() -> NSError {
-        return NSError(domain: "error", code: 1)
-    }
-    
-    private func anyFeedItem() -> FeedImage {
-        return FeedImage(id: UUID(),
-                         description: "any desc",
-                         location: "any loc",
-                         url: anyURL())
-    }
-
-    private func anyURL() -> URL {
-        return URL(string: "https://a-url.com")!
-    }
-    
-    private func anyItems() -> (models: [FeedImage], localModels: [LocalFeedImage]) {
-        let items = [anyFeedItem(), anyFeedItem()]
-        let localItems = items.map { LocalFeedImage(id: $0.id,
-                                                    description: $0.description,
-                                                    location: $0.location,
-                                                    url: $0.url)}
-        return (items, localItems)
-    }
-}
-
-private extension Date {
-    func adding(days: Int) -> Date {
-        return Calendar(identifier: .gregorian).date(byAdding: .day,
-                                                     value: days,
-                                                     to: self)!
-    }
-    
-    func adding(seconds: Int) -> Date {
-        return Calendar(identifier: .gregorian).date(byAdding: .second,
-                                                     value: seconds,
-                                                     to: self)!
     }
 }
