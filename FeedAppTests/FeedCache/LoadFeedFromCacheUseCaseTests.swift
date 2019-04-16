@@ -108,7 +108,7 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
         XCTAssertEqual(store.commands, [.retrieveItems])
     }
     
-    func test_load_deletesCacheOnSevenDaysOldCache() {
+    func test_load_hasNoSideEffectsOnSevenDaysOldCache() {
         let fixedCurrentDate = Date()
         let lessThanSevenDaysOldTimestamp = fixedCurrentDate.adding(days: -7)
         
@@ -118,10 +118,10 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
         sut.load { _ in }
         store.completesRetrieval(with: feed.localModels, timestamp: lessThanSevenDaysOldTimestamp)
         
-        XCTAssertEqual(store.commands, [.retrieveItems, .deleteCacheItems])
+        XCTAssertEqual(store.commands, [.retrieveItems])
     }
     
-    func test_load_deletesCacheOnMoreTahnSevenDaysOldCache() {
+    func test_load_hasNoSideEffectsOnMoreThanSevenDaysOldCache() {
         let fixedCurrentDate = Date()
         let lessThanSevenDaysOldTimestamp = fixedCurrentDate.adding(days: -7).adding(seconds: -1)
         
@@ -131,7 +131,7 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
         sut.load { _ in }
         store.completesRetrieval(with: feed.localModels, timestamp: lessThanSevenDaysOldTimestamp)
         
-        XCTAssertEqual(store.commands, [.retrieveItems, .deleteCacheItems])
+        XCTAssertEqual(store.commands, [.retrieveItems])
     }
     
     func test_load_doesNotDeliverAfterDeallocation() {
