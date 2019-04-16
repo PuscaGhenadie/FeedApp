@@ -74,6 +74,18 @@ class CacheValidationUseCaseTests: XCTestCase {
         XCTAssertEqual(store.commands, [.retrieveItems, .deleteCacheItems])
     }
     
+    func test_validate_doesNotDeleteCacheAfterDeallocation() {
+        let store = FeedStoreSpy()
+        var sut: LocalFeedLoader? = LocalFeedLoader(store: store, dateProvider: Date.init)
+        
+        var receivedResults = [LocalFeedLoader.LoadResult]()
+        sut?.validateCache()
+        sut = nil
+        store.completeRetrieveWithError(error: anyError())
+        
+        XCTAssertEqual(store.commands, [.retrieveItems])
+    }
+    
     // MARK: - Helpers
     private func makeSUT(currentDate: @escaping () -> Date = Date.init, file: StaticString = #file, line: UInt = #line) -> (sut: LocalFeedLoader, store: FeedStoreSpy) {
         let store = FeedStoreSpy()
