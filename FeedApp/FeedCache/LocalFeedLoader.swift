@@ -8,24 +8,43 @@
 
 import Foundation
 
-public final class LocalFeedLoader {
-    private let store: FeedStore
+final class FeedCachePolicy {
     private let dateProvider: () -> Date
-    
-    public typealias SaveResult = Error?
-    public typealias LoadResult = LoadFeedResult
+    let calendar = Calendar(identifier: .gregorian)
     
     private var maxCacheAgeInDays: Int {
         return 7
     }
     
+    public init(dateProvider: @escaping () -> Date) {
+        self.dateProvider = dateProvider
+    }
+    
+    public func validate(_ timestamp: Date) -> Bool {
+        
+        guard let maxCacheAge = calendar.date(byAdding: .day, value: maxCacheAgeInDays, to: timestamp) else {
+            return false
+        }
+        
+        return dateProvider() < maxCacheAge
+    }
+}
+
+public final class LocalFeedLoader {
+    private let store: FeedStore
+    private let cachePolicy: FeedCachePolicy
+    private let dateProvider: () -> Date
+    
     public init(store: FeedStore, dateProvider: @escaping () -> Date) {
         self.store = store
         self.dateProvider = dateProvider
+        self.cachePolicy = FeedCachePolicy(dateProvider: dateProvider)
     }
 }
 
 extension LocalFeedLoader {
+    public typealias SaveResult = Error?
+
     public func save(feed: [FeedImage], completion: @escaping (SaveResult) -> Void) {
         store.deleteCachedFeed { [weak self] deletionError in
             guard let self = self else { return }
@@ -47,13 +66,15 @@ extension LocalFeedLoader {
 }
 
 extension LocalFeedLoader: FeedLoader {
+    public typealias LoadResult = LoadFeedResult
+    
     public func load(completion: @escaping (LoadFeedResult) -> Void) {
         store.loadFeed { [weak self] result in
             guard let self = self else { return }
             switch result {
             case let .failure(error):
                 completion(.error(error))
-            case let .found(localFeedImages, timestamp) where self.validate(timestamp):
+            case let .found(localFeedImages, timestamp) where self.cachePolicy.validate(timestamp):
                 completion(.success(localFeedImages.toModels()))
             case .empty, .found:
                 completion(.success([]))
@@ -69,20 +90,11 @@ extension LocalFeedLoader {
             switch result {
             case .failure:
                 self.store.deleteCachedFeed { _ in }
-            case let .found(_, timestamp) where !self.validate(timestamp):
+            case let .found(_, timestamp) where !self.cachePolicy.validate(timestamp):
                 self.store.deleteCachedFeed { _ in }
             case .empty, .found: break
             }
         }
-    }
-    
-    private func validate(_ timestamp: Date) -> Bool {
-        let calendar = Calendar(identifier: .gregorian)
-        guard let maxCacheAge = calendar.date(byAdding: .day, value: maxCacheAgeInDays, to: timestamp) else {
-            return false
-        }
-        
-        return dateProvider() < maxCacheAge
     }
 }
 
