@@ -16,49 +16,43 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
         XCTAssertEqual(store.commands, [])
     }
     
+    func test_load_requestsCacheRetrieval() {
+        let (sut, store) = makeSUT()
+        
+        sut.load { _ in }
+        
+        XCTAssertEqual(store.commands, [.retrieveItems])
+    }
+    
+    func test_load_returnsErrorOnCacheRetrievalError() {
+        let (sut, store) = makeSUT()
+        let error = anyError()
+        
+        let exp = expectation(description: "Wait for completion")
+        var capturedError: Error?
+        sut.load { error in
+            capturedError = error
+            exp.fulfill()
+        }
+        
+        store.completeRetrieveWithError(error: error)
+        
+        wait(for: [exp], timeout: 1.0)
+        XCTAssertEqual(capturedError as NSError?, error)
+    }
+    
+    
+    // MARK: - Helpers
+
+    private func anyError() -> NSError {
+        return NSError(domain: "error", code: 1)
+    }
+
     private func makeSUT(currentDate: @escaping () -> Date = Date.init, file: StaticString = #file, line: UInt = #line) -> (sut: LocalFeedLoader, store: FeedStoreSpy) {
         let store = FeedStoreSpy()
         let sut = LocalFeedLoader(store: store, dateProvider: currentDate)
         trackForMemoryLeaks(store, file: file, line: line)
         trackForMemoryLeaks(sut, file: file, line: line)
         return (sut, store)
-    }
-    
-    private class FeedStoreSpy: FeedStore {
-        private var deletionCompletions = [DeletionCompletion]()
-        private var insertionCompletions = [InsertionCompletion]()
-        
-        private(set) var commands = [ReceivedCommands]()
-        
-        enum ReceivedCommands: Equatable {
-            case deleteCacheItems
-            case cacheItems([LocalFeedImage], Date)
-        }
-        
-        func deleteCachedFeed(completion: @escaping DeletionCompletion) {
-            deletionCompletions.append(completion)
-            commands.append(.deleteCacheItems)
-        }
-        
-        func cache(feed: [LocalFeedImage], timeStamp: Date, completion: @escaping InsertionCompletion) {
-            insertionCompletions.append(completion)
-            commands.append(.cacheItems(feed, timeStamp))
-        }
-        
-        func completeDeleteWith(error err: Error, at idx: Int = 0) {
-            deletionCompletions[idx](err)
-        }
-        
-        func completeDeleteWithSuccess(idx: Int = 0) {
-            deletionCompletions[idx](nil)
-        }
-        
-        func completeInsertionWith(error err: Error, at idx: Int = 0) {
-            insertionCompletions[idx](err)
-        }
-        
-        func completeInsertionWithSuccess(idx: Int = 0) {
-            insertionCompletions[idx](nil)
-        }
     }
 }
