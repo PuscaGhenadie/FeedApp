@@ -15,6 +15,10 @@ public final class LocalFeedLoader {
     public typealias SaveResult = Error?
     public typealias LoadResult = LoadFeedResult
     
+    private var maxCacheAgeInDays: Int {
+        return 7
+    }
+    
     public init(store: FeedStore, dateProvider: @escaping () -> Date) {
         self.store = store
         self.dateProvider = dateProvider
@@ -48,10 +52,6 @@ public final class LocalFeedLoader {
                 completion(.success([]))
             }
         }
-    }
-    
-    private var maxCacheAgeInDays: Int {
-        return 7
     }
     
     func validate(_ timestamp: Date) -> Bool {
