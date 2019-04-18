@@ -55,7 +55,7 @@ class FeedAppAPIEndToEndTests: XCTestCase {
             id: id(at: index),
             description: description(at: index),
             location: location(at: index),
-            imageURL: imageURL(at: index))
+            url: imageURL(at: index))
     }
     
     private func id(at index: Int) -> UUID {
