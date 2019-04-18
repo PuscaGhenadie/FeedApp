@@ -39,8 +39,12 @@ class CodableFeedStore {
                                   url: url)
         }
     }
-    private let storeURL = FileManager.default.urls(for: .documentDirectory,
-                                                    in: .userDomainMask).first!.appendingPathComponent("image-feed.store")
+    private let storeURL: URL
+    
+    init(storeURL: URL) {
+        self.storeURL = storeURL
+    }
+    
     func loadFeed(completion: @escaping FeedStore.RetrievalCompletion) {
         guard let data = try? Data(contentsOf: storeURL),
         let cacheData = try? JSONDecoder().decode(CacheData.self, from: data) else {
@@ -76,7 +80,7 @@ class CodableFeedStoreTests: XCTestCase {
     }
     
     func test_retrieve_emptyCacheReturnsEmpty() {
-        let sut = CodableFeedStore()
+        let sut = makeSUT()
         
         let exp = expectation(description: "Wait for completion")
         sut.loadFeed { result in
@@ -94,7 +98,7 @@ class CodableFeedStoreTests: XCTestCase {
     }
     
     func test_retrieve_hasNoSideEffectsOnEmptyCache() {
-        let sut = CodableFeedStore()
+        let sut = makeSUT()
         
         let exp = expectation(description: "Wait for completion")
         sut.loadFeed { firstResult in
@@ -114,7 +118,7 @@ class CodableFeedStoreTests: XCTestCase {
     }
     
     func test_retrieve_afterInsertingToEmptyCaches_returnsData() {
-        let sut = CodableFeedStore()
+        let sut = makeSUT()
         let insertedFeedImages = anyItems().localModels
         let insertTimestamp = Date()
         let exp = expectation(description: "Wait for completion")
@@ -136,5 +140,13 @@ class CodableFeedStoreTests: XCTestCase {
         }
         
         wait(for: [exp], timeout: 1.0)
+    }
+    
+    // MARK: - Helpers
+    
+    private func makeSUT() -> CodableFeedStore {
+        let storeURL = FileManager.default.urls(for: .documentDirectory,
+                                                in: .userDomainMask).first!.appendingPathComponent("image-feed.store")
+        return CodableFeedStore(storeURL: storeURL)
     }
 }
