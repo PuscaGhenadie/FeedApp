@@ -11,10 +11,34 @@ import FeedApp
 
 class CodableFeedStore {
     private struct CacheData: Codable {
-        let feed: [LocalFeedImage]
+        let feed: [CacheFeedImage]
         let date: Date
+        
+        var feedImages: [LocalFeedImage] {
+            return feed.map { $0.localFeedImage }
+        }
     }
 
+    private struct CacheFeedImage: Codable {
+        private let id: UUID
+        private let description: String?
+        private let location: String?
+        private let url: URL
+        
+        init(feedImage: LocalFeedImage) {
+            id = feedImage.id
+            description = feedImage.description
+            location = feedImage.location
+            url = feedImage.url
+        }
+        
+        var localFeedImage: LocalFeedImage {
+            return LocalFeedImage(id: id,
+                                  description: description,
+                                  location: location,
+                                  url: url)
+        }
+    }
     private let storeURL = FileManager.default.urls(for: .documentDirectory,
                                                     in: .userDomainMask).first!.appendingPathComponent("image-feed.store")
     func loadFeed(completion: @escaping FeedStore.RetrievalCompletion) {
@@ -23,11 +47,11 @@ class CodableFeedStore {
             return completion(.empty)
         }
         
-        completion(.found(cacheData.feed, cacheData.date))
+        completion(.found(cacheData.feedImages, cacheData.date))
     }
     
     func cache(feed: [LocalFeedImage], timeStamp: Date, completion: @escaping FeedStore.InsertionCompletion) {
-        let cacheData = CacheData(feed: feed, date: timeStamp)
+        let cacheData = CacheData(feed: feed.map { CacheFeedImage(feedImage: $0) }, date: timeStamp)
         let encodedData = try! JSONEncoder().encode(cacheData)
         try! encodedData.write(to: storeURL)
         completion(nil)
