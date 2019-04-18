@@ -10,11 +10,46 @@ import XCTest
 import FeedApp
 
 class CodableFeedStore {
+    private struct CacheData: Codable {
+        let feed: [LocalFeedImage]
+        let date: Date
+    }
+
+    private let storeURL = FileManager.default.urls(for: .documentDirectory,
+                                                    in: .userDomainMask).first!.appendingPathComponent("image-feed.store")
     func loadFeed(completion: @escaping FeedStore.RetrievalCompletion) {
-        completion(.empty)
+        guard let data = try? Data(contentsOf: storeURL),
+        let cacheData = try? JSONDecoder().decode(CacheData.self, from: data) else {
+            return completion(.empty)
+        }
+        
+        completion(.found(cacheData.feed, cacheData.date))
+    }
+    
+    func cache(feed: [LocalFeedImage], timeStamp: Date, completion: @escaping FeedStore.InsertionCompletion) {
+        let cacheData = CacheData(feed: feed, date: timeStamp)
+        let encodedData = try! JSONEncoder().encode(cacheData)
+        try! encodedData.write(to: storeURL)
+        completion(nil)
     }
 }
+
 class CodableFeedStoreTests: XCTestCase {
+    
+    override func setUp() {
+        super.setUp()
+        
+        let storeURL = FileManager.default.urls(for: .documentDirectory,
+                                                in: .userDomainMask).first!.appendingPathComponent("image-feed.store")
+        try? FileManager.default.removeItem(at: storeURL)
+    }
+
+    override func tearDown() {
+        super.tearDown()
+        let storeURL = FileManager.default.urls(for: .documentDirectory,
+                                                in: .userDomainMask).first!.appendingPathComponent("image-feed.store")
+        try? FileManager.default.removeItem(at: storeURL)
+    }
     
     func test_retrieve_emptyCacheReturnsEmpty() {
         let sut = CodableFeedStore()
@@ -51,6 +86,31 @@ class CodableFeedStoreTests: XCTestCase {
             }
         }
 
+        wait(for: [exp], timeout: 1.0)
+    }
+    
+    func test_retrieve_afterInsertingToEmptyCaches_returnsData() {
+        let sut = CodableFeedStore()
+        let insertedFeedImages = anyItems().localModels
+        let insertTimestamp = Date()
+        let exp = expectation(description: "Wait for completion")
+        
+        sut.cache(feed: insertedFeedImages,
+                  timeStamp: insertTimestamp) { insertError in
+                    XCTAssertNil(insertError)
+                    sut.loadFeed { loadResult in
+                        switch loadResult {
+                        case let .found(loadFeedImages, loadTimestamp):
+                            XCTAssertEqual(insertedFeedImages, loadFeedImages)
+                            XCTAssertEqual(insertTimestamp, loadTimestamp)
+                        default:
+                            XCTFail("Expected get feed images, got \(loadResult) instead")
+                        }
+                        
+                        exp.fulfill()
+                    }
+        }
+        
         wait(for: [exp], timeout: 1.0)
     }
 }
