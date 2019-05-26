@@ -9,38 +9,7 @@
 import XCTest
 import FeedApp
 
-protocol FeedStoreSpecs {
-    func test_retrieve_emptyCacheReturnsEmpty()
-    func test_retrieve_hasNoSideEffectsOnEmptyCache()
-    func test_retrieve_afterInsertingToEmptyCaches_returnsData()
-    func test_retrieve_deliversFoundOnNoneEmptyCache()
-
-    func test_insert_overridesPreviouslyInsertedCache()
-    
-    
-    func test_delete_emptyCacheStaysEmptyAndDoesNotFail()
-    func test_delete_cacheWithDataLeavesCacheEmpty()
-    
-    
-    func test_sideEffects_runSerially()
-}
-
-protocol FailableRetrieveFeedStoreSpecs {
-    func test_retrieve_deliversFailureOnRetrievalError()
-    func test_retrieve_hasNoSideEffectsOnError()
-}
-
-protocol FailableInsertFeedStoreSpecs {
-    func test_insert_deliversErrorOnInvalidStoreUrl()
-    func test_insert_noSideEffectsOnInsertionError()
-}
-
-protocol FailableDeleteFeedStoreSpecs {
-    func test_delete_returnsErrorOnDeleteOfNoPermissionURL()
-    func test_delete_hasNoSideEffectsOnDeletionError()
-}
-
-class CodableFeedStoreTests: XCTestCase {
+class CodableFeedStoreTests: XCTestCase, FailableFeedStoreSepcs {
     
     override func setUp() {
         super.setUp()
@@ -209,63 +178,6 @@ class CodableFeedStoreTests: XCTestCase {
         let sut = CodableFeedStore(storeURL: url ?? testSpecificStoreURL())
         trackForMemoryLeaks(sut, file: file, line: line)
         return sut
-    }
-    
-    @discardableResult
-    private func deleteCache(from sut: FeedStore) -> Error? {
-        let exp = expectation(description: "Wait for completion")
-        var capturedError: Error?
-        sut.deleteCachedFeed { error in
-            capturedError = error
-            exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
-        
-        return capturedError
-    }
-
-    @discardableResult
-    private func insert(_ cache: (feed: [LocalFeedImage], timestamp: Date),
-                        to sut: FeedStore) -> Error? {
-        let exp = expectation(description: "Wait for completion")
-        var capturedError: Error?
-        sut.cache(feed: cache.feed, timeStamp: cache.timestamp) { insertError in
-            capturedError = insertError
-            exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
-        
-        return capturedError
-    }
-
-    private func expect(_ sut: FeedStore,
-                        toLoadTwice expectedResult: RetrieveCachedFeedResult,
-                        file: StaticString = #file, line: UInt = #line) {
-        expect(sut, toLoad: expectedResult, file: file, line: line)
-        expect(sut, toLoad: expectedResult, file: file, line: line)
-    }
-    
-    private func expect(_ sut: FeedStore,
-                        toLoad expectedResult: RetrieveCachedFeedResult,
-                        file: StaticString = #file, line: UInt = #line) {
-        let exp = expectation(description: "Wait for completion")
-
-        sut.loadFeed { result in
-            switch (expectedResult, result) {
-            case (.empty, .empty),
-                 (.failure, .failure):
-                break
-            case let (.found(expected), .found(retrieved)):
-                XCTAssertEqual(expected.feed, retrieved.feed, file: file, line: line)
-                XCTAssertEqual(expected.timestamp, retrieved.timestamp, file: file, line: line)
-            default:
-                XCTFail("Expected to load \(expectedResult), got \(result) instead", file: file, line: line)
-            }
-            
-            exp.fulfill()
-        }
-        
-        wait(for: [exp], timeout: 1.0)
     }
     
     private func testSpecificStoreURL() -> URL {
