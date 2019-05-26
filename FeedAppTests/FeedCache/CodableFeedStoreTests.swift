@@ -77,19 +77,7 @@ class CodableFeedStoreTests: XCTestCase {
     func test_retrieve_emptyCacheReturnsEmpty() {
         let sut = makeSUT()
         
-        let exp = expectation(description: "Wait for completion")
-        sut.loadFeed { result in
-            switch result {
-            case .empty:
-                break
-            default:
-                XCTFail("Expected empty result, got \(result)")
-            }
-            
-            exp.fulfill()
-        }
-        
-        wait(for: [exp], timeout: 1.0)
+        expect(sut, toLoad: .empty)
     }
     
     func test_retrieve_hasNoSideEffectsOnEmptyCache() {
@@ -116,25 +104,15 @@ class CodableFeedStoreTests: XCTestCase {
         let sut = makeSUT()
         let insertedFeedImages = anyItems().localModels
         let insertTimestamp = Date()
+        
         let exp = expectation(description: "Wait for completion")
-        
-        sut.cache(feed: insertedFeedImages,
-                  timeStamp: insertTimestamp) { insertError in
-                    XCTAssertNil(insertError)
-                    sut.loadFeed { loadResult in
-                        switch loadResult {
-                        case let .found(loadFeedImages, loadTimestamp):
-                            XCTAssertEqual(insertedFeedImages, loadFeedImages)
-                            XCTAssertEqual(insertTimestamp, loadTimestamp)
-                        default:
-                            XCTFail("Expected get feed images, got \(loadResult) instead")
-                        }
-                        
-                        exp.fulfill()
-                    }
+        sut.cache(feed: insertedFeedImages, timeStamp: insertTimestamp) { insertError in
+            XCTAssertNil(insertError, "Expected to be inserted successfully")
+            exp.fulfill()
         }
-        
         wait(for: [exp], timeout: 1.0)
+
+        expect(sut, toLoad: .found(feed: insertedFeedImages, timestamp: insertTimestamp))
     }
     
     func test_retrieve_hasNoSideEffectsOnNonEmptyCache() {
@@ -177,6 +155,28 @@ class CodableFeedStoreTests: XCTestCase {
         let sut = CodableFeedStore(storeURL: testSpecificStoreURL())
         trackForMemoryLeaks(sut, file: file, line: line)
         return sut
+    }
+    
+    private func expect(_ sut: CodableFeedStore,
+                        toLoad expectedResult: RetrieveCachedFeedResult,
+                        file: StaticString = #file, line: UInt = #line) {
+        let exp = expectation(description: "Wait for completion")
+
+        sut.loadFeed { result in
+            switch (expectedResult, result) {
+            case (.empty, .empty):
+                break
+            case let (.found(expected), .found(retrieved)):
+                XCTAssertEqual(expected.feed, retrieved.feed, file: file, line: line)
+                XCTAssertEqual(expected.timestamp, retrieved.timestamp, file: file, line: line)
+            default:
+                XCTFail("Expected to load \(expectedResult), got \(result) instead", file: file, line: line)
+            }
+            
+            exp.fulfill()
+        }
+        
+        wait(for: [exp], timeout: 1.0)
     }
     
     private func testSpecificStoreURL() -> URL {
