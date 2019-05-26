@@ -51,7 +51,7 @@ class CodableFeedStore {
             return completion(.empty)
         }
         
-        completion(.found(cacheData.feedImages, cacheData.date))
+        completion(.found(feed: cacheData.feedImages, timestamp: cacheData.date))
     }
     
     func cache(feed: [LocalFeedImage], timeStamp: Date, completion: @escaping FeedStore.InsertionCompletion) {
@@ -131,6 +131,40 @@ class CodableFeedStoreTests: XCTestCase {
                         }
                         
                         exp.fulfill()
+                    }
+        }
+        
+        wait(for: [exp], timeout: 1.0)
+    }
+    
+    func test_retrieve_hasNoSideEffectsOnNonEmptyCache() {
+        let sut = makeSUT()
+        let insertedFeedImages = anyItems().localModels
+        let insertTimestamp = Date()
+        let exp = expectation(description: "Wait for completion")
+        
+        sut.cache(feed: insertedFeedImages,
+                  timeStamp: insertTimestamp) { insertError in
+                    XCTAssertNil(insertError)
+                    sut.loadFeed { firstResult in
+                        sut.loadFeed { secondResult in
+                            switch (firstResult, secondResult) {
+                            case let (.found(firstFound), .found(secondFound)):
+                                XCTAssertEqual(firstFound.feed, insertedFeedImages)
+                                XCTAssertEqual(firstFound.timestamp, insertTimestamp)
+                                
+                                XCTAssertEqual(secondFound.feed, insertedFeedImages)
+                                XCTAssertEqual(secondFound.timestamp, insertTimestamp)
+                            default:
+                                XCTFail("""
+                                           Expected retrieving twice from non empty cache to deliver same
+                                           found result with feed \(insertedFeedImages) and timestamp \(insertTimestamp),
+                                           got \(firstResult) and \(secondResult) instead
+                                    """)
+                            }
+                            
+                            exp.fulfill()
+                        }
                     }
         }
         
