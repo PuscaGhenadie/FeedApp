@@ -9,6 +9,37 @@
 import XCTest
 import FeedApp
 
+protocol FeedStoreSpecs {
+    func test_retrieve_emptyCacheReturnsEmpty()
+    func test_retrieve_hasNoSideEffectsOnEmptyCache()
+    func test_retrieve_afterInsertingToEmptyCaches_returnsData()
+    func test_retrieve_deliversFoundOnNoneEmptyCache()
+
+    func test_insert_overridesPreviouslyInsertedCache()
+    
+    
+    func test_delete_emptyCacheStaysEmptyAndDoesNotFail()
+    func test_delete_cacheWithDataLeavesCacheEmpty()
+    
+    
+    func test_sideEffects_runSerially()
+}
+
+protocol FailableRetrieveFeedStoreSpecs {
+    func test_retrieve_deliversFailureOnRetrievalError()
+    func test_retrieve_hasNoSideEffectsOnError()
+}
+
+protocol FailableInsertFeedStoreSpecs {
+    func test_insert_deliversErrorOnInvalidStoreUrl()
+    func test_insert_noSideEffectsOnInsertionError()
+}
+
+protocol FailableDeleteFeedStoreSpecs {
+    func test_delete_returnsErrorOnDeleteOfNoPermissionURL()
+    func test_delete_hasNoSideEffectsOnDeletionError()
+}
+
 class CodableFeedStoreTests: XCTestCase {
     
     override func setUp() {
@@ -93,6 +124,15 @@ class CodableFeedStoreTests: XCTestCase {
         
         XCTAssertNotNil(insertError, "Expected insert error for inserting at invalid url")
     }
+    
+    func test_insert_noSideEffectsOnInsertionError() {
+        let invalidStoreURL = URL(string: "invalid://store-url")
+        let sut = makeSUT(url: invalidStoreURL)
+        
+        insert((anyItems().localModels, Date()), to: sut)
+        
+        expect(sut, toLoad: .empty)
+    }
 
     func test_delete_emptyCacheStaysEmptyAndDoesNotFail() {
         let sut = makeSUT()
@@ -122,6 +162,15 @@ class CodableFeedStoreTests: XCTestCase {
         let deletionError = deleteCache(from: sut)
         
         XCTAssertNotNil(deletionError, "Expected deletion fail")
+    }
+    
+    func test_delete_hasNoSideEffectsOnDeletionError() {
+        let noPermissionsURL = cachesDirectory()
+        let sut = makeSUT(url: noPermissionsURL)
+        
+        deleteCache(from: sut)
+        
+        expect(sut, toLoad: .empty)
     }
 
     func test_sideEffects_runSerially() {
