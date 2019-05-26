@@ -91,12 +91,7 @@ class CodableFeedStoreTests: XCTestCase {
         let insertedFeedImages = anyItems().localModels
         let insertTimestamp = Date()
         
-        let exp = expectation(description: "Wait for completion")
-        sut.cache(feed: insertedFeedImages, timeStamp: insertTimestamp) { insertError in
-            XCTAssertNil(insertError, "Expected to be inserted successfully")
-            exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
+        insert((insertedFeedImages, insertTimestamp), to: sut)
 
         expect(sut, toLoad: .found(feed: insertedFeedImages, timestamp: insertTimestamp))
     }
@@ -105,15 +100,8 @@ class CodableFeedStoreTests: XCTestCase {
         let sut = makeSUT()
         let insertedFeedImages = anyItems().localModels
         let insertTimestamp = Date()
-        let exp = expectation(description: "Wait for completion")
         
-        sut.cache(feed: insertedFeedImages, timeStamp: insertTimestamp) { insertError in
-            XCTAssertNil(insertError, "Expected to insert successfully")
-            exp.fulfill()
-        }
-        
-        wait(for: [exp], timeout: 1.0)
-        
+        insert((insertedFeedImages, insertTimestamp), to: sut)
         expect(sut, toLoadTwice: .found(feed: insertedFeedImages, timestamp: insertTimestamp))
     }
     
@@ -125,6 +113,15 @@ class CodableFeedStoreTests: XCTestCase {
         return sut
     }
     
+    private func insert(_ cache: (feed: [LocalFeedImage], timestamp: Date), to sut: CodableFeedStore) {
+        let exp = expectation(description: "Wait for completion")
+        sut.cache(feed: cache.feed, timeStamp: cache.timestamp) { insertError in
+            XCTAssertNil(insertError, "Expected to insert successfully")
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 1.0)
+    }
+
     private func expect(_ sut: CodableFeedStore,
                         toLoadTwice expectedResult: RetrieveCachedFeedResult,
                         file: StaticString = #file, line: UInt = #line) {
