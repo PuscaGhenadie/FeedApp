@@ -149,7 +149,7 @@ class CodableFeedStoreTests: XCTestCase {
             
         }
         
-        wait(for: [exp1, exp2, exp3], timeout: 1.0)
+        waitForExpectations(timeout: 5.0)
         XCTAssertEqual(expectations, [exp1, exp2, exp3], "Expected operations to run serially")
     }
     // MARK: - Helpers
