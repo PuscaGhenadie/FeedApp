@@ -59,10 +59,14 @@ class CodableFeedStore {
     }
     
     func cache(feed: [LocalFeedImage], timeStamp: Date, completion: @escaping FeedStore.InsertionCompletion) {
-        let cacheData = CacheData(feed: feed.map { CacheFeedImage(feedImage: $0) }, date: timeStamp)
-        let encodedData = try! JSONEncoder().encode(cacheData)
-        try! encodedData.write(to: storeURL)
-        completion(nil)
+        do {
+            let cacheData = CacheData(feed: feed.map { CacheFeedImage(feedImage: $0) }, date: timeStamp)
+            let encodedData = try JSONEncoder().encode(cacheData)
+            try encodedData.write(to: storeURL)
+            completion(nil)
+        } catch {
+            completion(error)
+        }
     }
 }
 
@@ -141,6 +145,16 @@ class CodableFeedStoreTests: XCTestCase {
         
         expect(sut, toLoad: .found(feed: latesInsertFeed, timestamp: latesInsertDate))
     }
+    
+    func test_insert_deliversErrorOnInvalidStoreUrl() {
+        let invalidStoreURL = URL(string: "invalid://store-url")
+        let sut = makeSUT(url: invalidStoreURL)
+        
+        let insertError = insert((anyItems().localModels, Date()), to: sut)
+        
+        XCTAssertNotNil(insertError, "Expected insert error for inserting at invalid url")
+    }
+
     // MARK: - Helpers
     
     private func makeSUT(url: URL? = nil,
@@ -151,13 +165,18 @@ class CodableFeedStoreTests: XCTestCase {
         return sut
     }
     
-    private func insert(_ cache: (feed: [LocalFeedImage], timestamp: Date), to sut: CodableFeedStore) {
+    @discardableResult
+    private func insert(_ cache: (feed: [LocalFeedImage], timestamp: Date),
+                        to sut: CodableFeedStore) -> Error? {
         let exp = expectation(description: "Wait for completion")
+        var capturedError: Error?
         sut.cache(feed: cache.feed, timeStamp: cache.timestamp) { insertError in
-            XCTAssertNil(insertError, "Expected to insert successfully")
+            capturedError = insertError
             exp.fulfill()
         }
         wait(for: [exp], timeout: 1.0)
+        
+        return capturedError
     }
 
     private func expect(_ sut: CodableFeedStore,
