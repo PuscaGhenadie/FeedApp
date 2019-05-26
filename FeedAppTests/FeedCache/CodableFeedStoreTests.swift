@@ -134,12 +134,12 @@ class CodableFeedStoreTests: XCTestCase {
         
         insert((firstInsertFeed, firstInsertData), to: sut)
         
-        let secondInsertFeed = anyItems().localModels
-        let secondInsertDate = Date()
+        let latesInsertFeed = anyItems().localModels
+        let latesInsertDate = Date()
         
-        insert((secondInsertFeed, secondInsertDate), to: sut)
+        insert((latesInsertFeed, latesInsertDate), to: sut)
         
-        expect(sut, toLoad: .found(feed: secondInsertFeed, timestamp: secondInsertDate))
+        expect(sut, toLoad: .found(feed: latesInsertFeed, timestamp: latesInsertDate))
     }
     // MARK: - Helpers
     
