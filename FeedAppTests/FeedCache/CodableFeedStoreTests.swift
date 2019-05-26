@@ -96,7 +96,7 @@ class CodableFeedStoreTests: XCTestCase {
         expect(sut, toLoad: .found(feed: insertedFeedImages, timestamp: insertTimestamp))
     }
     
-    func test_retrieve_hasNoSideEffectsOnNonEmptyCache() {
+    func test_retrieve_deliversFoundOnNoneEmptyCache() {
         let sut = makeSUT()
         let insertedFeedImages = anyItems().localModels
         let insertTimestamp = Date()
