@@ -7,7 +7,7 @@
 		<key>CI.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>2</integer>
+			<integer>1</integer>
 		</dict>
 		<key>FeedApp.xcscheme_^#shared#^_</key>
 		<dict>
@@ -17,7 +17,7 @@
 		<key>FeedAppAPIEndToEndTests.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>1</integer>
+			<integer>2</integer>
 		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
@@ -28,6 +28,11 @@
 			<true/>
 		</dict>
 		<key>6CA99B0122625A14005CA8E0</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>6CD39F882263947D00A6860D</key>
 		<dict>
 			<key>primary</key>
 			<true/>
