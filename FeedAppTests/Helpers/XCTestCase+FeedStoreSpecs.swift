@@ -13,13 +13,13 @@ extension FeedStoreSpecs where Self: XCTestCase {
     func assertThatRetrieveDeliversEmptyOnEmptyCache(sut: FeedStore,
                                                      file: StaticString = #file,
                                                      line: UInt = #line) {
-        expect(sut, toLoad: .success(.empty), file: file, line: line)
+        expect(sut, toLoad: .success(nil), file: file, line: line)
     }
 
     func assertThatRetrievehasNoSideEffectsOnEmptyCache(sut: FeedStore,
                                                      file: StaticString = #file,
                                                      line: UInt = #line) {
-        expect(sut, toLoad: .success(.empty), file: file, line: line)
+        expect(sut, toLoad: .success(nil), file: file, line: line)
     }
     
     func assertThatRetrieveAfterInsertingToEmptyCacheReturnsData(sut: FeedStore,
@@ -31,7 +31,7 @@ extension FeedStoreSpecs where Self: XCTestCase {
         insert((insertedFeedImages, insertTimestamp), to: sut)
         
         expect(sut,
-               toLoad: .success(.found(feed: insertedFeedImages, timestamp: insertTimestamp)),
+               toLoad: .success(CachedFeed(feed: insertedFeedImages, timestamp: insertTimestamp)),
                file: file,
                line: line)
     }
@@ -45,7 +45,7 @@ extension FeedStoreSpecs where Self: XCTestCase {
         insert((insertedFeedImages, insertTimestamp), to: sut)
         
         expect(sut,
-               toLoadTwice: .success(.found(feed: insertedFeedImages, timestamp: insertTimestamp)),
+               toLoadTwice: .success(CachedFeed(feed: insertedFeedImages, timestamp: insertTimestamp)),
                file: file,
                line: line)
     }
@@ -76,7 +76,7 @@ extension FeedStoreSpecs where Self: XCTestCase {
         insert((latesInsertFeed, latesInsertDate), to: sut)
         
         expect(sut,
-               toLoad: .success(.found(feed: latesInsertFeed, timestamp: latesInsertDate)),
+               toLoad: .success(CachedFeed(feed: latesInsertFeed, timestamp: latesInsertDate)),
                file: file,
                line: line)
 
@@ -91,7 +91,7 @@ extension FeedStoreSpecs where Self: XCTestCase {
                      "Expected deletion to not fail",
                      file: file,
                      line: line)
-        expect(sut, toLoad: .success(.empty), file: file, line: line)
+        expect(sut, toLoad: .success(nil), file: file, line: line)
     }
 
     func assertThatDeleteCacheWithDataLeavesCacheEmpty(sut: FeedStore,
@@ -110,7 +110,7 @@ extension FeedStoreSpecs where Self: XCTestCase {
                      "Expected deletion to not fail",
                      file: file,
                      line: line)
-        expect(sut, toLoad: .success(.empty), file: file, line: line)
+        expect(sut, toLoad: .success(nil), file: file, line: line)
     }
     
     func assertThatSideEffectsRunSerially(sut: FeedStore,
@@ -190,10 +190,10 @@ extension FeedStoreSpecs where Self: XCTestCase {
         
         sut.loadFeed { result in
             switch (expectedResult, result) {
-            case (.success(.empty), .success(.empty)),
+            case (.success(nil), .success(nil)),
                  (.failure, .failure):
                 break
-            case let (.success(.found(expected)), .success(.found(retrieved))):
+            case let (.success(.some(expected)), .success(.some(retrieved))):
                 XCTAssertEqual(expected.feed, retrieved.feed, file: file, line: line)
                 XCTAssertEqual(expected.timestamp, retrieved.timestamp, file: file, line: line)
             default:

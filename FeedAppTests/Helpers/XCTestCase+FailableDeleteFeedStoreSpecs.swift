@@ -23,6 +23,6 @@ extension FailableDeleteFeedStoreSpecs where Self: XCTestCase {
                                                          line: UInt = #line) {
         deleteCache(from: sut)
         
-        expect(sut, toLoad: .success(.empty), file: file, line: line)
+        expect(sut, toLoad: .success(nil), file: file, line: line)
     }
 }

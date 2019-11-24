@@ -26,6 +26,6 @@ extension FailableInsertFeedStoreSpecs where Self: XCTestCase {
                                                           line: UInt = #line) {
         insert((anyItems().localModels, Date()), to: sut)
         
-        expect(sut, toLoad: .success(.empty), file: file, line: line)
+        expect(sut, toLoad: .success(nil), file: file, line: line)
     }
 }
