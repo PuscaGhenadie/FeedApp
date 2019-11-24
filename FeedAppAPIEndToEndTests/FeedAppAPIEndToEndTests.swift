@@ -23,7 +23,7 @@ class FeedAppAPIEndToEndTests: XCTestCase {
             XCTAssertEqual(items[5], expectedImage(at: 5))
             XCTAssertEqual(items[6], expectedImage(at: 6))
             XCTAssertEqual(items[7], expectedImage(at: 7))
-        case let .error(error)?:
+        case let .failure(error)?:
             XCTFail("Expected success, got \(error)")
         default:
             XCTFail("Expected success, got not result")

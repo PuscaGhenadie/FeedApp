@@ -52,7 +52,7 @@ class RemoteFeedLoaderTests: XCTestCase {
         let (sut, client) = makeSUT()
         
         expect(sut, toCompleteWithResult: failure(.invalidData)) {
-            let invalidJSON = Data(bytes: "inv json".utf8)
+            let invalidJSON = Data("inv json".utf8)
             client.complete(withStatusCode: 200, data: invalidJSON)
         }
     }
@@ -108,7 +108,7 @@ class RemoteFeedLoaderTests: XCTestCase {
     }
     
     private func failure(_ error: RemoteFeedLoader.Error) -> RemoteFeedLoader.Result {
-        return .error(error)
+        return .failure(error)
     }
 
     private func makeItem(id: UUID, description: String? = nil, location: String? = nil, imageURL: URL) -> (item: FeedImage, json: [String: Any]) {
@@ -139,7 +139,7 @@ class RemoteFeedLoaderTests: XCTestCase {
             switch (result, expectedResult) {
             case let (.success(items), .success(expectedItems)):
                 XCTAssertEqual(items, expectedItems, file: file, line: line)
-            case let (.error(error as RemoteFeedLoader.Error), .error(expectedError as RemoteFeedLoader.Error)):
+            case let (.failure(error as RemoteFeedLoader.Error), .failure(expectedError as RemoteFeedLoader.Error)):
                 XCTAssertEqual(error, expectedError, file: file, line: line)
             default:
                 XCTFail("Expected result \(expectedResult) got \(result) insted", file: file, line: line)

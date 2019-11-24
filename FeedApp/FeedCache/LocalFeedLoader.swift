@@ -49,7 +49,7 @@ extension LocalFeedLoader: FeedLoader {
             guard let self = self else { return }
             switch result {
             case let .failure(error):
-                completion(.error(error))
+                completion(.failure(error))
             case let .found(localFeedImages, timestamp) where FeedCachePolicy.validate(timestamp, currentDate: self.dateProvider()):
                 completion(.success(localFeedImages.toModels()))
             case .empty, .found:

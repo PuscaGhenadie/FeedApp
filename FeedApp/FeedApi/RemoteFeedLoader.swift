@@ -32,7 +32,7 @@ public final class RemoteFeedLoader: FeedLoader {
             case let .success(data, response):
                 completion(RemoteFeedLoader.map(data, response))
             case .error:
-                completion(.error(Error.connectivity))
+                completion(.failure(Error.connectivity))
             }
         }
     }
@@ -42,7 +42,7 @@ public final class RemoteFeedLoader: FeedLoader {
             let remoteItems = try FeedItemsMapper.map(data, response)
             return .success(remoteItems.toItems())
         } catch {
-            return .error(error)
+            return .failure(error)
         }
     }
 }

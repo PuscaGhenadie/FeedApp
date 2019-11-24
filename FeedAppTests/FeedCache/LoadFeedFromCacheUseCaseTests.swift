@@ -28,7 +28,7 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
         let (sut, store) = makeSUT()
         let error = anyError()
         
-        expect(sut, toCompleteWith: .error(error), when: {
+        expect(sut, toCompleteWith: .failure(error), when: {
             store.completeRetrieveWithError(error: error)
         })
     }
@@ -162,7 +162,7 @@ class LoadFeedFromCacheUseCaseTests: XCTestCase {
             switch (result, expectedResult) {
             case let (.success(receivedImages), .success(expectedImages)):
                 XCTAssertEqual(receivedImages, expectedImages, file: file, line: line)
-            case let (.error(receivedError as NSError), .error(expectedError as NSError)):
+            case let (.failure(receivedError as NSError), .failure(expectedError as NSError)):
                 XCTAssertEqual(receivedError, expectedError, file: file, line: line)
             default:
                 XCTFail("Expected \(expectedResult), got \(result)", file: file, line: line)
