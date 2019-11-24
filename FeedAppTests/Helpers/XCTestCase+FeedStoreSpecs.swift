@@ -177,14 +177,14 @@ extension FeedStoreSpecs where Self: XCTestCase {
     }
     
     internal func expect(_ sut: FeedStore,
-                        toLoadTwice expectedResult: RetrieveCachedFeedResult,
+                         toLoadTwice expectedResult: FeedStore.RetrievalResult,
                         file: StaticString = #file, line: UInt = #line) {
         expect(sut, toLoad: expectedResult, file: file, line: line)
         expect(sut, toLoad: expectedResult, file: file, line: line)
     }
     
     internal func expect(_ sut: FeedStore,
-                        toLoad expectedResult: RetrieveCachedFeedResult,
+                        toLoad expectedResult: FeedStore.RetrievalResult,
                         file: StaticString = #file, line: UInt = #line) {
         let exp = expectation(description: "Wait for completion")
         
