@@ -52,46 +52,39 @@ public class CodableFeedStore: FeedStore {
     public func loadFeed(completion: @escaping RetrievalCompletion) {
         let storeURL = self.storeURL
         queue.async {
-            guard let data = try? Data(contentsOf: storeURL) else {
-                return completion(.success(nil))
-            }
-            
-            do {
+            completion(Result {
+                guard let data = try? Data(contentsOf: storeURL) else {
+                    return nil
+                }
+                
                 let cache = try JSONDecoder().decode(CacheData.self, from: data)
-                completion(.success(CachedFeed(feed: cache.feedImages, timestamp: cache.date)))
-            } catch {
-                completion(.failure(error))
-            }
+                return CachedFeed(feed: cache.feedImages, timestamp: cache.date)
+            })
         }
     }
     
     public func cache(feed: [LocalFeedImage], timeStamp: Date, completion: @escaping InsertionCompletion) {
         let storeURL = self.storeURL
         queue.async(flags: .barrier) {
-            do {
+            completion(Result {
                 let cacheData = CacheData(feed: feed.map { CacheFeedImage(feedImage: $0) }, date: timeStamp)
                 let encodedData = try JSONEncoder().encode(cacheData)
                 try encodedData.write(to: storeURL)
-                completion(nil)
-            } catch {
-                completion(error)
-            }
+                return ()
+            })
         }
     }
     
     public func deleteCachedFeed(completion: @escaping DeletionCompletion) {
         let storeURL = self.storeURL
         queue.async(flags: .barrier) {
-            guard FileManager.default.fileExists(atPath: storeURL.path) else {
-                return completion(nil)
-            }
-            
-            do {
+            completion(Result {
+                guard FileManager.default.fileExists(atPath: storeURL.path) else {
+                    return ()
+                }
+                
                 try FileManager.default.removeItem(at: storeURL)
-                completion(nil)
-            } catch {
-                completion(error)
-            }
+            })
         }
     }
 }

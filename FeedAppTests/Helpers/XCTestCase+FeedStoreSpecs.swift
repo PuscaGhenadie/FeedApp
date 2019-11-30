@@ -97,11 +97,12 @@ extension FeedStoreSpecs where Self: XCTestCase {
     func assertThatDeleteCacheWithDataLeavesCacheEmpty(sut: FeedStore,
                                                             file: StaticString = #file,
                                                             line: UInt = #line) {
-        sut.cache(feed: anyItems().localModels, timeStamp: Date()) { error in
-            XCTAssertNil(error,
-                         "Expected cache to not fail",
+        sut.cache(feed: anyItems().localModels, timeStamp: Date()) { result in
+            if case .failure = result {
+                XCTFail("Expected cache to not fail",
                          file: file,
                          line: line)
+            }
         }
         
         let deletionError = deleteCache(from: sut)
@@ -153,8 +154,10 @@ extension FeedStoreSpecs where Self: XCTestCase {
     internal func deleteCache(from sut: FeedStore) -> Error? {
         let exp = expectation(description: "Wait for completion")
         var capturedError: Error?
-        sut.deleteCachedFeed { error in
-            capturedError = error
+        sut.deleteCachedFeed { result in
+            if case let .failure(error) = result {
+                capturedError = error
+            }
             exp.fulfill()
         }
         wait(for: [exp], timeout: 1.0)
@@ -167,8 +170,10 @@ extension FeedStoreSpecs where Self: XCTestCase {
                         to sut: FeedStore) -> Error? {
         let exp = expectation(description: "Wait for completion")
         var capturedError: Error?
-        sut.cache(feed: cache.feed, timeStamp: cache.timestamp) { insertError in
-            capturedError = insertError
+        sut.cache(feed: cache.feed, timeStamp: cache.timestamp) { result in
+            if case let .failure(error) = result {
+                capturedError = error
+            }
             exp.fulfill()
         }
         wait(for: [exp], timeout: 1.0)

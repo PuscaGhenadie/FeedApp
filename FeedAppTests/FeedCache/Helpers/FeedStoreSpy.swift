@@ -37,19 +37,19 @@ class FeedStoreSpy: FeedStore {
     }
     
     func completeDeleteWith(error err: Error, at idx: Int = 0) {
-        deletionCompletions[idx](err)
+        deletionCompletions[idx](.failure(err))
     }
     
     func completeDeleteWithSuccess(idx: Int = 0) {
-        deletionCompletions[idx](nil)
+        deletionCompletions[idx](.success(()))
     }
     
     func completeInsertionWith(error err: Error, at idx: Int = 0) {
-        insertionCompletions[idx](err)
+        insertionCompletions[idx](.failure(err))
     }
     
     func completeInsertionWithSuccess(idx: Int = 0) {
-        insertionCompletions[idx](nil)
+        insertionCompletions[idx](.success(()))
     }
     
     func completeRetrieveWithError(error err: Error, at idx: Int = 0) {

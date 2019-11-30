@@ -119,8 +119,10 @@ class CacheFeedUseCase: XCTestCase {
         
         let exp = expectation(description: "Wait for completion")
         var capturedError: Error?
-        sut.save(feed: items) { err in
-            capturedError = err
+        sut.save(feed: items) { result in
+            if case let .failure(error) = result {
+                capturedError = error
+            }
             exp.fulfill()
         }
         
