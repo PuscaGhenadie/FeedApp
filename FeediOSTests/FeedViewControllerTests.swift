@@ -157,6 +157,33 @@ final class FeedViewControllerTests: XCTestCase {
         XCTAssertEqual(view0?.renderedImage, imageData0, "Expected to not change the first image once second image is loaded")
         XCTAssertEqual(view1?.renderedImage, imageData1, "Expected to render the second image once image is loaded")
     }
+    
+    func test_feedImageViewRetryButton_isVisibleOnImageLoadError() {
+        let image0 = makeImage(url: URL(string: "http://url-0.com")!)
+        let image1 = makeImage(url: URL(string: "http://url-1.com")!)
+        
+        let (sut, loader) = makeSUT()
+        
+        sut.loadViewIfNeeded()
+        loader.completeLoading(withResult: .success([image0, image1]), at: 0)
+        
+        let view0 = sut.simulateFeedImageViewVisible(at: 0)
+        let view1 = sut.simulateFeedImageViewVisible(at: 1)
+        
+        XCTAssertEqual(view0?.isShowingRetryAction, false, "Expected to not show the retry action while the first image is loading")
+        XCTAssertEqual(view1?.isShowingRetryAction, false, "Expected to not show the retry action while the second image is loading")
+        
+        let imageData0 = UIImage.make(withColor: .red).pngData()!
+        loader.completeImageLoading(at: 0, withResult: .success(imageData0))
+        XCTAssertEqual(view0?.isShowingRetryAction, false, "Expected to not show the retry action once the first image is loaded successfully")
+        XCTAssertEqual(view1?.isShowingRetryAction, false, "Expected to not change the retry action state once the first image is loaded")
+        
+        loader.completeImageLoading(at: 1, withResult: .failure(anyError()))
+        XCTAssertEqual(view0?.isShowingRetryAction, false, "Expected to not change the retry action state once the second image failed to load")
+        XCTAssertEqual(view1?.isShowingRetryAction, true, "Expected to show the retry action once the second image load failed")
+    }
+    
+    
     // MARK: - Helpers
     
     private func makeSUT(file: StaticString = #file, line: UInt = #line) -> (sut: FeedViewController, loader: LoaderSpy) {
@@ -285,6 +312,9 @@ private extension FeedImageCell {
         return !locationContainer.isHidden
     }
     
+    var isShowingRetryAction: Bool {
+        !imageRetryButton.isHidden
+    }
     var locationText: String? {
         return locationLabel.text
     }
