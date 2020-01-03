@@ -108,6 +108,30 @@ final class FeedViewControllerTests: XCTestCase {
         XCTAssertEqual(loader.cancelledImageUrls, [image0.url, image1.url], "Expected first image URL requests once first view is visible")
     }
 
+    func test_feedImageViewLoadingIndicator_isCorrectlyShownWhileLoadingTheImage() {
+        let image0 = makeImage(url: URL(string: "http://url-0.com")!)
+        let image1 = makeImage(url: URL(string: "http://url-1.com")!)
+        
+        let (sut, loader) = makeSUT()
+        
+        sut.loadViewIfNeeded()
+        loader.completeLoading(withResult: .success([image0, image1]), at: 0)
+        
+        let view0 = sut.simulateFeedImageViewVisible(at: 0)
+        let view1 = sut.simulateFeedImageViewVisible(at: 1)
+        
+        XCTAssertEqual(view0?.isShowingImageLoadingIndicator, true, "Expected to show loading indicator for the first image while the image is loading")
+        XCTAssertEqual(view1?.isShowingImageLoadingIndicator, true, "Expected to show loading indicator for the second image while the image is loading")
+        
+        loader.completeImageLoading(at: 0, withResult: .success(Data()))
+        XCTAssertEqual(view0?.isShowingImageLoadingIndicator, false, "Expected to not show loading indicator for the first image once image is loaded")
+        XCTAssertEqual(view1?.isShowingImageLoadingIndicator, true, "Expected to show loading indicator for the second image while the image is loading")
+        
+        loader.completeImageLoading(at: 1, withResult: .success(Data()))
+        XCTAssertEqual(view0?.isShowingImageLoadingIndicator, false, "Expected to not change image loading indicator once second image is loaded")
+        XCTAssertEqual(view1?.isShowingImageLoadingIndicator, false, "Expected to not show loading indicator for the second image once image is loaded")
+    }
+    
     // MARK: - Helpers
     
     private func makeSUT(file: StaticString = #file, line: UInt = #line) -> (sut: FeedViewController, loader: LoaderSpy) {
@@ -173,14 +197,21 @@ final class FeedViewControllerTests: XCTestCase {
             }
         }
 
-        var loadedFeedImages = [URL]()
+        private var imageRequests = [(url: URL, completion: (FeedImageDataLoader.Result) -> Void)]()
+        var loadedFeedImages: [URL] {
+            imageRequests.map { $0.url }
+        }
         var cancelledImageUrls = [URL]()
         
-        func loadImageData(from url: URL) -> FeedImageDataLoaderTask {
-            loadedFeedImages.append(url)
-            return TaskSpy {
-                self.cancelledImageUrls.append(url)
+        func loadImageData(from url: URL, completion: @escaping (FeedImageDataLoader.Result) -> Void) -> FeedImageDataLoaderTask {
+            imageRequests.append((url, completion))
+            return TaskSpy { [weak self] in
+                self?.cancelledImageUrls.append(url)
             }
+        }
+        
+        func completeImageLoading(at index: Int, withResult result: FeedImageDataLoader.Result) {
+            imageRequests[index].completion(result)
         }
     }
     
@@ -196,8 +227,9 @@ extension FeedViewController {
         refreshControl?.simulateValueChanged()
     }
     
-    func simulateFeedImageViewVisible(at index: Int) {
-        _ = feedImageView(at: index)
+    @discardableResult
+    func simulateFeedImageViewVisible(at index: Int) -> FeedImageCell? {
+        feedImageView(at: index) as? FeedImageCell
     }
     
     func simulateFeedImageViewNotVisible(at row: Int) {
@@ -217,8 +249,10 @@ extension FeedViewController {
     }
     
     func feedImageView(at row: Int) -> UITableViewCell? {
-        return tableView.dataSource?.tableView(tableView, cellForRowAt: IndexPath(row: row, section: feedImageSection))
-    }
+         let ds = tableView.dataSource
+         let index = IndexPath(row: row, section: feedImageSection)
+         return ds?.tableView(tableView, cellForRowAt: index)
+     }
 }
 
 private extension FeedImageCell {
@@ -232,6 +266,10 @@ private extension FeedImageCell {
     
     var descriptionText: String? {
         return descriptionLabel.text
+    }
+    
+    var isShowingImageLoadingIndicator: Bool {
+        imageContainer.isShimmering
     }
 }
 extension UIRefreshControl {
