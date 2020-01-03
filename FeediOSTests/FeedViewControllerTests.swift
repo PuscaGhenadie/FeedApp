@@ -50,7 +50,7 @@ final class FeedViewControllerTests: XCTestCase {
         XCTAssertEqual(loader.loadCount, 3, "Expected to trigger load on another user initiated reload")
     }
     
-    func test_viewLoaded_showsLoadingIndicator() {
+    func test_loadingFeedIndicator_isVisibleWhileLoadingFeed() {
         let (sut, loader) = makeSUT()
 
         sut.loadViewIfNeeded()
