@@ -15,16 +15,16 @@ final class FeedViewControllerTests: XCTestCase {
     
     func test_loadFeedActions_requestsFeed() {
         let (sut, loader) = makeSUT()
-        XCTAssertEqual(loader.loadCount, 0, "Expected not to trigger load before view is loaded")
+        XCTAssertEqual(loader.feedRequestsCount, 0, "Expected not to trigger load before view is loaded")
         
         sut.loadViewIfNeeded()
-        XCTAssertEqual(loader.loadCount, 1, "Expected to trigger load once view is loaded")
+        XCTAssertEqual(loader.feedRequestsCount, 1, "Expected to trigger load once view is loaded")
         
         sut.simulatedUserIniatedReload()
-        XCTAssertEqual(loader.loadCount, 2, "Expected to trigger load on user initiated reload")
+        XCTAssertEqual(loader.feedRequestsCount, 2, "Expected to trigger load on user initiated reload")
         
         sut.simulatedUserIniatedReload()
-        XCTAssertEqual(loader.loadCount, 3, "Expected to trigger load on another user initiated reload")
+        XCTAssertEqual(loader.feedRequestsCount, 3, "Expected to trigger load on another user initiated reload")
     }
     
     func test_loadingFeedIndicator_isVisibleWhileLoadingFeed() {
@@ -74,11 +74,28 @@ final class FeedViewControllerTests: XCTestCase {
         assertThat(sut, isRendering: [image0])
     }
     
+    func test_feedImageView_loadsImagURLWhenVisible() {
+        let image0 = makeImage(url: URL(string: "http://url-0.com")!)
+        let image1 = makeImage(url: URL(string: "http://url-1.com")!)
+        
+        let (sut, loader) = makeSUT()
+        
+        sut.loadViewIfNeeded()
+        loader.completeLoading(withResult: .success([image0, image1]), at: 0)
+        XCTAssertEqual(loader.loadedFeedImages, [], "Expected no image URL requests until view becomes visible")
+        
+        sut.simulateFeedImaeViewVisible(at: 0)
+        XCTAssertEqual(loader.loadedFeedImages, [image0.url], "Expected first image URL requests once first view is visible")
+        
+        sut.simulateFeedImaeViewVisible(at: 1)
+        XCTAssertEqual(loader.loadedFeedImages, [image0.url, image1.url], "Expected first image URL requests once first view is visible")
+        
+    }
     // MARK: - Helpers
     
     private func makeSUT(file: StaticString = #file, line: UInt = #line) -> (sut: FeedViewController, loader: LoaderSpy) {
         let loader = LoaderSpy()
-        let sut = FeedViewController(loader: loader)
+        let sut = FeedViewController(feedLoader: loader, imageLoader: loader)
         trackForMemoryLeaks(sut, file: file, line: line)
         return (sut, loader)
     }
@@ -113,18 +130,27 @@ final class FeedViewControllerTests: XCTestCase {
                        line: line)
     }
     
-    final class LoaderSpy: FeedLoader {
-        private var completions = [(FeedLoader.Result) -> Void]()
-        var loadCount: Int {
-            return completions.count
+    final class LoaderSpy: FeedLoader, FeedImageDataLoader {
+        
+        // MARK: -  Feed loader
+        private var feedRequests = [(FeedLoader.Result) -> Void]()
+        var feedRequestsCount: Int {
+            feedRequests.count
         }
         
         func load(completion: @escaping (FeedLoader.Result) -> Void) {
-            completions.append(completion)
+            feedRequests.append(completion)
         }
         
         func completeLoading(withResult result: FeedLoader.Result = .success([]), at idx: Int = 0) {
-            completions[idx](result)
+            feedRequests[idx](result)
+        }
+        
+        // MARK: - Image loader
+        var loadedFeedImages = [URL]()
+        
+        func loadImageData(from url: URL) {
+            loadedFeedImages.append(url)
         }
     }
     
@@ -138,6 +164,10 @@ extension FeedViewController {
     
     func simulatedUserIniatedReload() {
         refreshControl?.simulateValueChanged()
+    }
+    
+    func simulateFeedImaeViewVisible(at index: Int) {
+        _ = feedImageView(at: index)
     }
     
     var isShowingLoadingIndicator: Bool {
