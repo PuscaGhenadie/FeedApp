@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import FeedApp
 
 public class FeedUIComposer {
     public static func feedComposedWith(feedLoader: FeedLoader, imageLoader: FeedImageDataLoader) -> FeedViewController {
