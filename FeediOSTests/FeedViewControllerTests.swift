@@ -8,6 +8,7 @@
 
 import XCTest
 import UIKit
+import FeedApp
 
 final class LoaderSpy {
     private(set) var loadCount = 0
