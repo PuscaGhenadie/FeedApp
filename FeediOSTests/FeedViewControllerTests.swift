@@ -200,6 +200,31 @@ final class FeedViewControllerTests: XCTestCase {
         XCTAssertEqual(view0?.isShowingRetryAction, true, "Expected to show retry action on invalid image data")
     }
     
+    func test_feedImageViewRetryAction_retriesImageLoad() {
+        let image0 = makeImage(url: URL(string: "http://url-0.com")!)
+        let image1 = makeImage(url: URL(string: "http://url-1.com")!)
+        
+        let (sut, loader) = makeSUT()
+        
+        sut.loadViewIfNeeded()
+        loader.completeLoading(withResult: .success([image0, image1]), at: 0)
+        
+        let view0 = sut.simulateFeedImageViewVisible(at: 0)
+        let view1 = sut.simulateFeedImageViewVisible(at: 1)
+        
+        XCTAssertEqual(loader.loadedFeedImages, [image0.url, image1.url], "Expected two image requests for the two visible views")
+        
+        loader.completeImageLoading(at: 0, withResult: .failure(anyError()))
+        loader.completeImageLoading(at: 1, withResult: .failure(anyError()))
+        XCTAssertEqual(loader.loadedFeedImages, [image0.url, image1.url], "Expected to not trigger any requests on fail")
+        
+        view0?.simulateRetryAction()
+        XCTAssertEqual(loader.loadedFeedImages, [image0.url, image1.url, image0.url], "Expected another request for the first image on retry")
+        
+        view1?.simulateRetryAction()
+        XCTAssertEqual(loader.loadedFeedImages, [image0.url, image1.url, image0.url, image1.url], "Expected another request for the second image on retry")
+    }
+    
     // MARK: - Helpers
     
     private func makeSUT(file: StaticString = #file, line: UInt = #line) -> (sut: FeedViewController, loader: LoaderSpy) {
@@ -324,6 +349,10 @@ extension FeedViewController {
 }
 
 private extension FeedImageCell {
+    func simulateRetryAction() {
+        imageRetryButton.simulateTap()
+    }
+    
     var isShowingLocation: Bool {
         return !locationContainer.isHidden
     }
@@ -348,10 +377,18 @@ private extension FeedImageCell {
     }
 }
 
-extension UIRefreshControl {
+extension UIControl {
+    func simulateTap() {
+        simulateAction(event: .touchUpInside)
+    }
+    
     func simulateValueChanged() {
+        simulateAction(event: .valueChanged)
+    }
+    
+    func simulateAction(event: UIControl.Event) {
         allTargets.forEach { target in
-            actions(forTarget: target, forControlEvent: .valueChanged)?.forEach {
+            actions(forTarget: target, forControlEvent: event)?.forEach {
                 (target as NSObject).perform(Selector($0))
             }
         }
