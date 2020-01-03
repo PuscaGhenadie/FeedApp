@@ -10,14 +10,6 @@ import XCTest
 import UIKit
 import FeedApp
 
-final class LoaderSpy: FeedLoader {
-    private(set) var loadCount = 0
-    
-    func load(completion: @escaping (FeedLoader.Result) -> Void) {
-        loadCount += 1
-    }
-}
-
 final class FeedViewController: UITableViewController {
     private var loader: FeedLoader?
     
@@ -36,7 +28,9 @@ final class FeedViewController: UITableViewController {
     }
     
     @objc private func load() {
-        loader?.load { _ in }
+        loader?.load { [weak self] _ in
+            self?.refreshControl?.endRefreshing()
+        }
     }
 }
 
@@ -68,11 +62,21 @@ final class FeedViewControllerTests: XCTestCase {
     }
     
     func test_viewLoaded_showsLoadingIndicator() {
+        let (sut, _) = makeSUT()
+        
+        sut.loadViewIfNeeded()
+        
+        XCTAssertTrue(sut.refreshControl?.isRefreshing == true)
+    }
+    
+    func test_feedLoaded_hidesLoadingIndicator() {
         let (sut, loader) = makeSUT()
         
         sut.loadViewIfNeeded()
         
         XCTAssertTrue(sut.refreshControl?.isRefreshing == true)
+        loader.completeLoading()
+        XCTAssertTrue(sut.refreshControl?.isRefreshing == false)
     }
     
     // MARK: - Helpers
@@ -80,8 +84,23 @@ final class FeedViewControllerTests: XCTestCase {
     private func makeSUT(file: StaticString = #file, line: UInt = #line) -> (sut: FeedViewController, loader: LoaderSpy) {
         let loader = LoaderSpy()
         let sut = FeedViewController(loader: loader)
-        trackForMemoryLeaks(sut)
+        trackForMemoryLeaks(sut, file: file, line: line)
         return (sut, loader)
+    }
+    
+    final class LoaderSpy: FeedLoader {
+        private var completions = [(FeedLoader.Result) -> Void]()
+        var loadCount: Int {
+            return completions.count
+        }
+        
+        func load(completion: @escaping (FeedLoader.Result) -> Void) {
+            completions.append(completion)
+        }
+        
+        func completeLoading() {
+            completions[0](.success([]))
+        }
     }
 }
 
